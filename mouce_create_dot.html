@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mouse Create Dot</title>
+    <style>
+      *,
+      ::after,
+      ::before {
+        margin: 0;
+        padding: 0;
+      }
+      #canvas {
+        background-color: orange;
+      }
+    </style>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas');
+      const CANVAS_WIDTH = canvas.offsetWidth;
+      const CANVAS_HEIGHT = canvas.offsetHeight;
+      const gl = canvas.getContext('webgl');
+
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            void main() {
+                gl_Position = aPosition;
+                gl_PointSize = 30.0;
+            }
+        `;
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            void main() {
+                gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+            }
+        `;
+
+      const program = initShader(
+        gl,
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE
+      );
+      const aPosition = gl.getAttribLocation(program, 'aPosition');
+      gl.drawArrays(gl.POINTS, 0, 1);
+
+      canvas.addEventListener('click', e => {
+        const { offsetX, offsetY } = e;
+        const pointX =  (offsetX - CANVAS_WIDTH / 2) / (CANVAS_WIDTH / 2);
+        const pointY = (CANVAS_HEIGHT / 2 - offsetY) / (CANVAS_HEIGHT / 2);
+        gl.vertexAttrib2f(aPosition, pointX, pointY);
+        gl.drawArrays(gl.POINTS, 0, 1);
+      });
+    </script>
+  </body>
+</html>

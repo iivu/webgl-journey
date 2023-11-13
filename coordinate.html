@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Coordinate</title>
+    <style>
+        *,:after,:before { padding: 0;margin: 0; }
+        #canvas { background-color: gray; }
+        body { position: relative; }
+        body::after {
+            content: '';
+            display: block;
+            width: 500px;
+            height: 1px;
+            background-color:orange;
+            position: absolute;
+            top: 250px;
+            left: 0;
+        }
+        body::before {
+            content: '';
+            display: block;
+            height: 500px;
+            width: 1px;
+            background-color:orange;
+            position: absolute;
+            top: 0;
+            left: 250px;
+        }
+    </style>
+    <script src="./libs/index.js"></script>
+</head>
+<body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl');
+  
+        // 顶点着色器
+        const VERTEX_SHADER_SOURCE = `
+              void main() {
+                  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+                  gl_PointSize = 4.0;
+              }
+          `;
+        // 片元着色器
+        const FRAGMENT_SHADER_SOURCE = `
+              void main() {
+                  gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+              }
+          `;
+  
+        initShader(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
+  
+        gl.drawArrays(gl.POINTS, 1, 1);
+      </script>
+</body>
+</html>
