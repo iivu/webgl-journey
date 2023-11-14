@@ -22,11 +22,11 @@
     <canvas id="canvas" width="500" height="500"></canvas>
     <script>
       const canvas = document.getElementById('canvas')
-      const CANVAS_WIDTH = canvas.offsetWidth
-      const CANVAS_HEIGHT = canvas.offsetHeight
       const gl = canvas.getContext('webgl')
 
-      const originSpeed = 0.02
+      // 食物允许误差修正
+      const base = 1.2
+      const originSpeed = 0.04
       // 顶点着色器
       const VERTEX_SHADER_SOURCE = `
             attribute vec4 aPosition;
@@ -49,6 +49,7 @@
       const aPosition = gl.getAttribLocation(program, 'aPosition')
 
       const food = {
+        isInit: false,
         isEat: true,
         x: 0,
         y: 0,
@@ -61,6 +62,7 @@
       let direction = 'x'
 
       function createFood() {
+        food.isInit = true
         if(food.isEat) {
           food.x = Math.random() * 2 -1
           food.y = Math.random() * 2 -1
@@ -71,8 +73,23 @@
       function draw() {
         gl.vertexAttrib3f(aPosition, food.x, food.y, 0.0)
         gl.drawArrays(gl.POINTS, 0, 1)
-        snakeBodies.forEach(({ x, y }) => {
-          gl.vertexAttrib3f(aPosition, x, y, 0.0)
+        let prevX = 0
+        let prevY = 0
+        snakeBodies.forEach((_,index) => {
+          const body = snakeBodies[index]
+          if(index === 0) {
+            prevX = body.x
+            prevY = body.y
+            body[direction] += speed
+            gl.vertexAttrib3f(aPosition, body.x, body.y, 0.0)
+          } else {
+            const { x,y } = body
+            body.x = prevX
+            body.y = prevY
+            prevX = x
+            prevY = y
+          }
+          gl.vertexAttrib3f(aPosition, body.x, body.y, 0.0)
           gl.drawArrays(gl.POINTS, 0, 1)
         })
       }
@@ -103,11 +120,15 @@
       function start() {
         timer = window.setInterval(() => {
           const head = snakeBodies[0]
-          head[direction] += speed
           if (head.x > 1.0 || head.x < -1.0 || head.y > 1.0 || head.y < -1.0) {
             const _confirm = confirm('Game Over!! Restart?')
             _confirm ? restart() : gameOver()
             return
+          }
+          const collisionRange = base * originSpeed
+          if(food.isInit && head.x > (food.x - collisionRange) && head.x < (food.x + collisionRange) && head.y > (food.y - collisionRange) && head.y < (food.y + collisionRange)) {
+            snakeBodies.push({ x:food.x,y:food.y })
+            food.isEat = true
           }
           createFood()
           draw()
