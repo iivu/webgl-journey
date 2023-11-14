@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mouse Create Dot</title>
     <style>
-      *,
-      ::after,
-      ::before {
-        margin: 0;
-        padding: 0;
-      }
-      #canvas {
-        background-color: orange;
-      }
+        *,
+        ::after,
+        ::before {
+            margin: 0;
+            padding: 0;
+        }
+        #canvas {
+            background-color: orange;
+        }
     </style>
     <script src="./libs/index.js"></script>
   </head>
@@ -36,8 +36,10 @@
         `;
       // 片元着色器
       const FRAGMENT_SHADER_SOURCE = `
+            precision mediump float;
+            uniform vec2 uColor;
             void main() {
-                gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+                gl_FragColor = vec4(uColor.r, uColor.g, 0.0,1.0);
             }
         `;
 
@@ -47,6 +49,7 @@
         FRAGMENT_SHADER_SOURCE
       );
       const aPosition = gl.getAttribLocation(program, 'aPosition');
+      const uColor = gl.getUniformLocation(program, 'uColor');
 
       canvas.addEventListener('click', e => {
         const { offsetX, offsetY } = e;
@@ -55,6 +58,7 @@
         points.push({ x: pointX,y:pointY })
         points.forEach(({x,y}) => {
           gl.vertexAttrib2f(aPosition, x, y);
+          gl.uniform2f(uColor,x,y);
           gl.drawArrays(gl.POINTS, 0, 1);
         })
       });
