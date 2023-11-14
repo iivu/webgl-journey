@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Snake</title>
+    <style>
+        *,
+        ::after,
+        ::before {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas {
+            background-color: orange;
+        }
+    </style>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas')
+      const CANVAS_WIDTH = canvas.offsetWidth
+      const CANVAS_HEIGHT = canvas.offsetHeight
+      const gl = canvas.getContext('webgl')
+
+      const originSpeed = 0.02
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            void main() {
+                gl_Position = aPosition;
+                gl_PointSize = 10.0;
+            }
+        `
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            void main() {
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        `
+      const program = initShader(
+        gl,
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE
+      )
+      const aPosition = gl.getAttribLocation(program, 'aPosition')
+
+      const food = {
+        isEat: true,
+        x: 0,
+        y: 0,
+      }
+      let timer = 0
+      let snakeBodies = [
+        { x: 0.0, y: 0.0 }
+      ]
+      let speed = originSpeed
+      let direction = 'x'
+
+      function createFood() {
+        if(food.isEat) {
+          food.x = Math.random() * 2 -1
+          food.y = Math.random() * 2 -1
+          food.isEat = false
+        }
+      }
+
+      function draw() {
+        gl.vertexAttrib3f(aPosition, food.x, food.y, 0.0)
+        gl.drawArrays(gl.POINTS, 0, 1)
+        snakeBodies.forEach(({ x, y }) => {
+          gl.vertexAttrib3f(aPosition, x, y, 0.0)
+          gl.drawArrays(gl.POINTS, 0, 1)
+        })
+      }
+
+      function initEvent() {
+        document.addEventListener('keydown', e => {
+          switch (e.keyCode) {
+            case 37:
+              direction = 'x'
+              speed = -originSpeed
+              break
+            case 38:
+              direction = 'y'
+              speed = originSpeed
+              break
+            case 39:
+              direction = 'x'
+              speed = originSpeed
+              break
+            case 40:
+              direction = 'y'
+              speed = -originSpeed
+              break
+          }
+        })
+      }
+
+      function start() {
+        timer = window.setInterval(() => {
+          const head = snakeBodies[0]
+          head[direction] += speed
+          if (head.x > 1.0 || head.x < -1.0 || head.y > 1.0 || head.y < -1.0) {
+            const _confirm = confirm('Game Over!! Restart?')
+            _confirm ? restart() : gameOver()
+            return
+          }
+          createFood()
+          draw()
+        }, 100)
+      }
+
+      function restart() {
+        clearInterval(timer)
+        speed = originSpeed
+        direction = 'x'
+        snakeBodies = [
+          { x: 0.0, y: 0.0 }
+        ]
+        start()
+      }
+
+      function gameOver() {
+        clearInterval(timer)
+      }
+
+      initEvent()
+      start()
+    </script>
+  </body>
+</html>
