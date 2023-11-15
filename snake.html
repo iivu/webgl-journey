@@ -63,9 +63,9 @@
 
       function createFood() {
         food.isInit = true
-        if(food.isEat) {
-          food.x = Math.random() * 2 -1
-          food.y = Math.random() * 2 -1
+        if (food.isEat) {
+          food.x = Math.random() * 2 - 1
+          food.y = Math.random() * 2 - 1
           food.isEat = false
         }
       }
@@ -75,15 +75,14 @@
         gl.drawArrays(gl.POINTS, 0, 1)
         let prevX = 0
         let prevY = 0
-        snakeBodies.forEach((_,index) => {
+        snakeBodies.forEach((_, index) => {
           const body = snakeBodies[index]
-          if(index === 0) {
+          if (index === 0) {
             prevX = body.x
             prevY = body.y
             body[direction] += speed
-            gl.vertexAttrib3f(aPosition, body.x, body.y, 0.0)
           } else {
-            const { x,y } = body
+            const { x, y } = body
             body.x = prevX
             body.y = prevY
             prevX = x
@@ -120,33 +119,18 @@
       function start() {
         timer = window.setInterval(() => {
           const head = snakeBodies[0]
-          if (head.x > 1.0 || head.x < -1.0 || head.y > 1.0 || head.y < -1.0) {
-            const _confirm = confirm('Game Over!! Restart?')
-            _confirm ? restart() : gameOver()
-            return
-          }
+          if (head.x > 1.0) head.x = -1.0
+          if (head.x < -1.0) head.x = 1.0
+          if (head.y > 1.0) head.y = -1.0
+          if (head.y < -1.0) head.y = 1.0
           const collisionRange = base * originSpeed
-          if(food.isInit && head.x > (food.x - collisionRange) && head.x < (food.x + collisionRange) && head.y > (food.y - collisionRange) && head.y < (food.y + collisionRange)) {
-            snakeBodies.push({ x:food.x,y:food.y })
+          if (food.isInit && head.x > (food.x - collisionRange) && head.x < (food.x + collisionRange) && head.y > (food.y - collisionRange) && head.y < (food.y + collisionRange)) {
+            snakeBodies.push({ x: food.x, y: food.y })
             food.isEat = true
           }
           createFood()
           draw()
         }, 100)
-      }
-
-      function restart() {
-        clearInterval(timer)
-        speed = originSpeed
-        direction = 'x'
-        snakeBodies = [
-          { x: 0.0, y: 0.0 }
-        ]
-        start()
-      }
-
-      function gameOver() {
-        clearInterval(timer)
       }
 
       initEvent()
