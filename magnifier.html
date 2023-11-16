@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Magnifier</title>
+    <style>
+        *,
+        ::after,
+        ::before {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas')
+      const canvasBounds = canvas.getBoundingClientRect()
+      const gl = canvas.getContext('webgl')
+
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            attribute vec4 aTex;
+            varying vec2 vTex;
+            varying vec4 vPosition;
+            void main() {
+                vPosition = aPosition;
+                gl_Position = aPosition;
+                vTex = vec2(aTex.x, aTex.y);
+            }
+        `
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            precision lowp float;
+            uniform sampler2D uSample;
+            varying vec2 vTex;
+            uniform vec2 lookAt;
+            varying vec4 vPosition;
+
+            void main() {
+                float fOpacity = 0.0;
+                float dis = distance(lookAt, vec2(vPosition));
+                vec2 uv = vTex;
+                if(dis > 0.2) {
+                  fOpacity = 0.05;
+                } else {
+                  fOpacity = 1.0;
+                  vec2 diff = vPosition.xy - lookAt;
+                  uv.x -= diff.x * 0.3;
+                  uv.y += diff.y * 0.3;
+                }
+                vec4 color = texture2D(uSample, uv);
+                gl_FragColor = vec4(color.xyz * fOpacity, fOpacity);
+            }
+        `
+
+      const program = initShader(
+        gl,
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE
+      )
+      const points = new Float32Array([
+        -1.0, 1.0, 0.0, 1.0,
+        -1.0, -1.0, 0.0, 0.0,
+        1.0, 1.0, 1.0, 1.0,
+        1.0, -1.0, 1.0, 0.0,
+      ])
+      const ELEMENT_SIZE = points.BYTES_PER_ELEMENT
+      const aPosition = gl.getAttribLocation(program, 'aPosition')
+      const aTex = gl.getAttribLocation(program, 'aTex')
+      const uSample = gl.getUniformLocation(program, 'uSample')
+      const lookAt = gl.getUniformLocation(program, 'lookAt')
+      const buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+      gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+      gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, ELEMENT_SIZE * 4, 0)
+      gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, ELEMENT_SIZE * 4, ELEMENT_SIZE * 2)
+      gl.enableVertexAttribArray(aPosition)
+      gl.enableVertexAttribArray(aTex)
+
+      function run() {
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        requestAnimationFrame(run)
+      }
+
+      const img = new Image()
+      img.onload = function () {
+        const texture = gl.createTexture()
+        // 反转Y轴
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1)
+        // 激活纹理管理器
+        gl.activeTexture(gl.TEXTURE0)
+        // 绑定纹理类型
+        gl.bindTexture(gl.TEXTURE_2D, texture)
+        // 设置纹理放大缩小逻辑
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+        // 设置纹理平铺逻辑
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        // 配置纹理
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img)
+        // 赋值
+        gl.uniform1i(uSample, 0)
+        run()
+      }
+      img.src = './assets/1.jpg'
+
+      canvas.addEventListener('mousemove', e => {
+        const { offsetX, offsetY } = e
+        const canvasX = (offsetX - (canvasBounds.left + canvasBounds.width / 2)) / (canvasBounds.width / 2)
+        const canvasY = ((canvasBounds.top + canvasBounds.height / 2) - offsetY) / (canvasBounds.height / 2)
+        gl.uniform2fv(lookAt, [canvasX, canvasY])
+      })
+    </script>
+  </body>
+</html>
