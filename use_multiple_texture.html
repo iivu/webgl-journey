@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Use Multiple Texture</title>
+    <style>
+        *,
+        ::after,
+        ::before {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas')
+      const gl = canvas.getContext('webgl')
+
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            attribute vec4 aTex;
+            varying vec2 vTex;
+            void main() {
+                gl_Position = aPosition;
+                vTex = vec2(aTex.x, aTex.y);
+            }
+        `
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            precision lowp float;
+            uniform sampler2D uSample1;
+            uniform sampler2D uSample2;
+            varying vec2 vTex;
+            void main() {
+                vec4 c1 = texture2D(uSample1, vTex);
+                vec4 c2 = texture2D(uSample2, vTex);
+                gl_FragColor = c1 * c2;
+            }
+        `
+
+      const program = initShader(
+        gl,
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE
+      )
+      const points = new Float32Array([
+        -0.5, 0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.0, 0.0,
+        0.5, 0.5, 1.0, 1.0,
+        0.5, -0.5, 1.0, 0.0,
+      ])
+      const ELEMENT_SIZE = points.BYTES_PER_ELEMENT
+      const aPosition = gl.getAttribLocation(program, 'aPosition')
+      const aTex = gl.getAttribLocation(program, 'aTex')
+      const uSample1 = gl.getUniformLocation(program, 'uSample1')
+      const uSample2 = gl.getUniformLocation(program, 'uSample2')
+      const buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+      gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+      gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, ELEMENT_SIZE * 4, 0)
+      gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, ELEMENT_SIZE * 4, ELEMENT_SIZE * 2)
+      gl.enableVertexAttribArray(aPosition)
+      gl.enableVertexAttribArray(aTex)
+
+      function prepareTexture(url, location, index) {
+        return new Promise(resolve => {
+          const img = new Image()
+          img.onload = function () {
+            const texture = gl.createTexture()
+            // 反转Y轴
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1)
+            // 激活纹理管理器
+            gl.activeTexture(gl[`TEXTURE${index}`])
+            // 绑定纹理类型
+            gl.bindTexture(gl.TEXTURE_2D, texture)
+            // 设置纹理放大缩小逻辑
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+            // 设置纹理平铺逻辑
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+            // 配置纹理
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img)
+            // 赋值
+            gl.uniform1i(location, index)
+            resolve()
+          }
+          img.src = url
+        })
+      }
+
+      Promise.all([
+        prepareTexture('./assets/1.jpg', uSample1, 0),
+        prepareTexture('./assets/2.jpg', uSample2, 1),
+      ]).then(() => gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4))
+    </script>
+  </body>
+</html>
