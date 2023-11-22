@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Mix Ball</title>
+    <style>
+        *,
+        ::after,
+        ::before {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas {
+            /*background-color: orange;*/
+        }
+    </style>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas')
+      const gl = canvas.getContext('webgl')
+      const balls = [
+        { y: 180, speed: .5 },
+        { y: 320, speed: -.5 },
+      ]
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            void main() {
+                gl_Position = aPosition;
+                gl_PointSize = 10.0;
+            }
+        `
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            precision lowp float;
+            uniform vec3 metaBalls[2];
+            void main() {
+                float x = gl_FragCoord.x;
+                float y = gl_FragCoord.y;
+                float v = 0.0;
+                for(int i = 0;i<2;i++) {
+                    vec3 m = metaBalls[i];
+                    float dx = m.x - x;
+                    float dy = m.y - y;
+                    float r = m.z;
+                    v += r*r/(dx*dx + dy*dy);
+                }
+                vec4 color;
+                if(v > 1.0) {
+                    color = vec4(0.0,1.0,0.0,1.0);
+                } else {
+                    discard;
+                }
+                gl_FragColor = vec4(color.rgb,1.0);
+            }
+        `
+
+      const program = initShader(
+        gl,
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE
+      )
+      const points = new Float32Array([
+        -1.0, -1.0,
+        1.0, -1.0,
+        -1.0, 1.0,
+        1.0, 1.0,
+      ])
+      const aPosition = gl.getAttribLocation(program, 'aPosition')
+      const uMetaBalls = gl.getUniformLocation(program, 'metaBalls')
+      const buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+      gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+      gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0)
+      gl.enableVertexAttribArray(aPosition)
+
+      let times = 0;
+      function run() {
+        times++
+        let data = []
+        for (let i = 0; i < balls.length; i++) {
+          if(times % 100 === 0) {
+            balls[i].speed *= -1
+          }
+          const ball = balls[i]
+          ball.y += ball.speed
+          data.push(250, ball.y, 30)
+        }
+        gl.uniform3fv(uMetaBalls, new Float32Array(data))
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        requestAnimationFrame(run)
+      }
+
+      run()
+    </script>
+  </body>
+</html>
