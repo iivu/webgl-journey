@@ -92,3 +92,13 @@ function getViewMatrix(eyex,eyey,eyez,lookAtx,lookAty,lookAtz,upx,upy,upz) {
     -dot(x, eye), -dot(y, eye), -dot(z, eye), 1.0
   ])
 }
+
+// 获取正射投影矩阵
+function getOrthoMatrix(left, right, bottom, top, near, far) {
+  return new Float32Array([
+    2.0 / (right - left), 0.0, 0.0, 0.0,
+    0.0, 2.0 / (top - bottom), 0.0, 0.0,
+    0.0, 0.0, -2.0 / (far - near), 0.0,
+    -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1.0
+  ])
+}
