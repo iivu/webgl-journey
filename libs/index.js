@@ -102,3 +102,14 @@ function getOrthoMatrix(left, right, bottom, top, near, far) {
     -(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1.0
   ])
 }
+
+// 获取透视投影矩阵
+function getPerspectiveMatrix(fov, aspect, near, far) {
+  fov = fov * Math.PI / 180
+  return new Float32Array([
+    1/(aspect*Math.tan(fov/2)), 0.0, 0.0, 0.0,
+    0.0, 1/Math.tan(fov/2), 0.0, 0.0,
+    0.0, -(far+near)/(far-near), -(2*far*near)/(far-near), 0.0,
+    0.0,0.0,-1.0,0.0,
+  ])
+}
