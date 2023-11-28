@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Radius</title>
+    <style>
+        *,
+        ::after,
+        ::before {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas {
+            background-color: orange;
+        }
+    </style>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas')
+      const gl = canvas.getContext('webgl')
+      let CUBE_SIZE = 0.6
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            varying vec4 vPosition;
+            void main() {
+                gl_Position = aPosition;
+                gl_PointSize = 10.0;
+                vPosition = aPosition;
+            }
+        `
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            precision lowp float;
+            uniform float radius;
+            varying vec4 vPosition;
+            uniform float w;
+            uniform float h;
+
+            void setColor(float x, float y, vec2 target) {
+                float d = distance(target, vec2(x, y));
+                if(d > radius) {
+                  discard;
+                } else {
+                  gl_FragColor = vec4(1.0,0.0,0.0 ,1.0);
+                }
+            }
+
+            void main() {
+                float x = vPosition.x;
+                float y = vPosition.y;
+                // 左上角
+                vec2 topLeft = vec2(-w + radius, h - radius);
+                // 右上角
+                vec2 topRight = vec2(w - radius, h - radius);
+                // 左下角
+                vec2 bottomRight = vec2(-w + radius, -h + radius);
+                // 右下角
+                vec2 bottomLeft = vec2(w - radius, -h + radius);
+                if(x < topLeft.x && y > topLeft.y) {
+                  setColor(x,y,topLeft);
+                } else if (x > topRight.x && y > topLeft.y) {
+                  setColor(x,y,topRight);
+                } else if (x < bottomRight.x && y < bottomRight.y) {
+                  setColor(x,y,bottomRight);
+                } else if (x > bottomLeft.x && y < bottomLeft.y) {
+                  setColor(x,y,bottomLeft);
+                } else {
+                  gl_FragColor = vec4(1.0,0.0,0.0 ,1.0);
+                }
+            }
+        `
+      const program = initShader(
+        gl,
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE
+      )
+      const points = new Float32Array([
+        -CUBE_SIZE, -CUBE_SIZE,
+        CUBE_SIZE, -CUBE_SIZE,
+        -CUBE_SIZE, CUBE_SIZE,
+        CUBE_SIZE, CUBE_SIZE
+      ])
+      const aPosition = gl.getAttribLocation(program, 'aPosition')
+      const radius = gl.getUniformLocation(program, 'radius')
+      const w = gl.getUniformLocation(program, 'w')
+      const h = gl.getUniformLocation(program, 'h')
+      const buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+      gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+      gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0)
+      gl.enableVertexAttribArray(aPosition)
+
+      let radiusValue = 0.0
+      let step = 0.01
+      function draw() {
+        if(radiusValue > CUBE_SIZE || radiusValue < 0) {
+          step = -step
+        }
+        radiusValue += step
+        gl.uniform1f(radius, radiusValue)
+        gl.uniform1f(w, CUBE_SIZE)
+        gl.uniform1f(h, CUBE_SIZE)
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        requestAnimationFrame(draw)
+      }
+
+      draw()
+    </script>
+  </body>
+</html>
