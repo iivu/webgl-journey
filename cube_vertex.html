@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Cube Vertex</title>
+    <style>
+        *,
+        ::after,
+        ::before {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas {
+            background-color: orange;
+        }
+    </style>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas')
+      const gl = canvas.getContext('webgl')
+
+      // 正方体的各个顶点
+      const v0 = [1,1,1]
+      const v1 = [-1,1,1]
+      const v2 = [-1,-1,1]
+      const v3 = [1,-1,1]
+      const v4 = [1,-1,-1]
+      const v5 = [1,1,-1]
+      const v6 = [-1,1,-1]
+      const v7 = [-1,-1,-1]
+      const points = new Float32Array([
+        ...v0,...v1,...v2,...v0,...v2,...v3,
+        ...v0,...v3,...v4,...v0,...v4,...v5,
+        ...v0,...v5,...v6,...v0,...v6,...v1,
+        ...v1,...v6,...v7,...v1,...v7,...v2,
+        ...v7,...v4,...v3,...v7,...v2,...v3,
+        ...v4,...v7,...v6,...v4,...v6,...v5,
+      ])
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            attribute vec4 aPosition;
+            attribute vec4 aColor;
+            varying vec4 vColor;
+            uniform mat4 mat;
+            void main() {
+                gl_Position = mat * aPosition;
+                vColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        `
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            void main() {
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        `
+      const BYTES = points.BYTES_PER_ELEMENT
+      const program = initShader(
+        gl,
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE
+      )
+      const aPosition = gl.getAttribLocation(program, 'aPosition')
+      const aColor = gl.getAttribLocation(program, 'aColor')
+      const mat = gl.getUniformLocation(program, 'mat')
+      const buffer = gl.createBuffer()
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+      gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+      gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0)
+      gl.enableVertexAttribArray(aPosition)
+
+      let eyex = 3
+      let eyey = 3
+      let eyez = 5
+
+      function draw() {
+        const vm = getViewMatrix(eyex, eyey, eyez, 0.0, 0.0, 0.0, 0.0, 0.6, 0.0)
+        const perspectiveMatrix = getPerspectiveMatrix(30, canvas.width / canvas.height, 100, 1)
+        gl.enable(gl.DEPTH_TEST)
+        gl.uniformMatrix4fv(mat, false, mixMatrix(perspectiveMatrix, vm))
+        gl.drawArrays(gl.TRIANGLES, 0, points.length / 3)
+      }
+
+      draw()
+    </script>
+  </body>
+</html>

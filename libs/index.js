@@ -52,7 +52,9 @@ function mixMatrix(a, b) {
 function normalized(arr) {
   const sum = arr.reduce((prev, cur) => prev + cur * cur, 0)
   const middle = Math.sqrt(sum)
-  return arr.map(item => item / middle)
+  for (let i = 0; i < arr.length; i++) {
+    arr[i] = arr[i] / middle
+  }
 }
 
 // 向量叉积，获取法向量
@@ -75,10 +77,10 @@ function minus(a, b) {
 }
 
 // 获取视图矩阵
-function getViewMatrix(eyex,eyey,eyez,lookAtx,lookAty,lookAtz,upx,upy,upz) {
-  const eye = new Float32Array([eyex,eyey,eyez])
-  const lookAt = new Float32Array([lookAtx,lookAty,lookAtz])
-  const up = new Float32Array([upx,upy,upz])
+function getViewMatrix(eyex, eyey, eyez, lookAtx, lookAty, lookAtz, upx, upy, upz) {
+  const eye = new Float32Array([eyex, eyey, eyez])
+  const lookAt = new Float32Array([lookAtx, lookAty, lookAtz])
+  const up = new Float32Array([upx, upy, upz])
   const z = minus(eye, lookAt)
   normalized(z)
   normalized(up)
@@ -94,7 +96,7 @@ function getViewMatrix(eyex,eyey,eyez,lookAtx,lookAty,lookAtz,upx,upy,upz) {
 }
 
 // 获取正射投影矩阵
-function getOrthoMatrix(left, right, bottom, top, near, far) {
+function getOrthoMatrix(left, right, top, bottom, near, far) {
   return new Float32Array([
     2.0 / (right - left), 0.0, 0.0, 0.0,
     0.0, 2.0 / (top - bottom), 0.0, 0.0,
@@ -104,12 +106,12 @@ function getOrthoMatrix(left, right, bottom, top, near, far) {
 }
 
 // 获取透视投影矩阵
-function getPerspectiveMatrix(fov, aspect, near, far) {
+function getPerspectiveMatrix(fov, aspect, far, near) {
   fov = fov * Math.PI / 180
   return new Float32Array([
-    1/(aspect*Math.tan(fov/2)), 0.0, 0.0, 0.0,
-    0.0, 1/Math.tan(fov/2), 0.0, 0.0,
-    0.0, -(far+near)/(far-near), -(2*far*near)/(far-near), 0.0,
-    0.0,0.0,-1.0,0.0,
+    1 / (aspect * Math.tan(fov / 2)), 0.0, 0.0, 0.0,
+    0.0, 1 / Math.tan(fov / 2), 0.0, 0.0,
+    0.0, 0.0, -(far + near) / (far - near), -(2 * far * near) / (far - near),
+    0.0, 0.0, -1.0, 0.0,
   ])
 }
