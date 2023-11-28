@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create A Circle Dot</title>
+    <script src="./libs/index.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas');
+      const gl = canvas.getContext('webgl');
+
+      // 顶点着色器
+      const VERTEX_SHADER_SOURCE = `
+            void main() {
+                gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+                gl_PointSize = 100.0;
+            }
+        `;
+      // 片元着色器
+      const FRAGMENT_SHADER_SOURCE = `
+            precision lowp float;
+            void main() {
+                float dis = distance(gl_PointCoord, vec2(0.5,0.5));
+                if(dis < 0.5) {
+                    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+                } else {
+                    discard;
+                }
+            }
+        `;
+
+      initShader(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
+
+      gl.drawArrays(gl.POINTS, 0, 1);
+    </script>
+  </body>
+</html>
